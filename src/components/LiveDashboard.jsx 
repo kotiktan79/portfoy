@@ -1,0 +1,51 @@
+// src/components/LiveDashboard.jsx
+import React, { useEffect, useState } from "react";
+import { Paper, Typography, Box, Divider, List, ListItem, ListItemText } from "@mui/material";
+import { getCryptoPrices } from "../utils/priceService";
+
+const LiveDashboard = () => {
+  const [prices, setPrices] = useState(null);
+  const [advice, setAdvice] = useState([]);
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const result = await getCryptoPrices();
+      setPrices(result);
+
+      const tips = [];
+      if (result.BTC > 1200000) tips.push("📈 BTC yüksek, kâr realizasyonu düşünebilirsin.");
+      if (result.ETH < 30000) tips.push("📉 ETH düşüşte, alım fırsatı olabilir.");
+      if (result.USD > 40) tips.push("📈 Dolar kuru yükseliyor, döviz pozisyonu korunabilir.");
+
+      setAdvice(tips);
+    };
+
+    fetchPrices();
+  }, []);
+
+  return (
+    <Paper sx={{ p: 3, mt: 3 }}>
+      <Typography variant="h6">🌐 Canlı Piyasa Takibi</Typography>
+      {prices ? (
+        <Box sx={{ mt: 2 }}>
+          <Typography>BTC: {prices.BTC.toLocaleString()} ₺</Typography>
+          <Typography>ETH: {prices.ETH.toLocaleString()} ₺</Typography>
+          <Typography>USD: {prices.USD.toFixed(2)} ₺</Typography>
+          <Typography>EUR: {prices.EUR.toFixed(2)} ₺</Typography>
+          <Typography>Altın: {prices.GOLD.toFixed(2)} ₺</Typography>
+        </Box>
+      ) : (
+        <Typography>Veriler yükleniyor...</Typography>
+      )}
+
+      <Divider sx={{ my: 2 }}>📢 Tavsiyeler</Divider>
+      <List>
+        {advice.map((item, i) => (
+          <ListItem key={i}><ListItemText primary={item} /></ListItem>
+        ))}
+      </List>
+    </Paper>
+  );
+};
+
+export default LiveDashboard;

@@ -1,0 +1,5 @@
+[
+    { "name": "AKF Teknoloji Fonu", "code": "AKF", "performance30d": 4.8, "risk": "Orta", "lastUpdate": "2025-07-15" },
+    { "name": "HEK Girişim Fonu", "code": "HEK", "performance30d": 5.3, "risk": "Yüksek", "lastUpdate": "2025-07-16" },
+    { "name": "ISY Sabit Fon", "code": "ISY", "performance30d": 2.1, "risk": "Düşük", "lastUpdate": "2025-07-14" }
+  ]
