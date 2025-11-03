@@ -1,8 +1,8 @@
 // src/App.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import {
   Tabs, Tab, Box, useMediaQuery, Drawer,
-  IconButton, AppBar, Toolbar, Typography, useTheme
+  IconButton, AppBar, Toolbar, Typography, useTheme, CircularProgress
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 
@@ -25,52 +25,39 @@ import InsightsIcon from "@mui/icons-material/Insights";
 import ChatIcon from "@mui/icons-material/Chat";
 import ComputerIcon from "@mui/icons-material/Computer";
 
-/* ---- bileşenler ---- */
-import Portfolio from "./components/Portfolio";
-import AddAsset from "./components/AddAsset";
-import Charts from "./components/Charts";
-import Settings from "./components/Settings";
-import UpdatePrice from "./components/UpdatePrice";
-import GptAdvice from "./components/GptAdvice";
-import ExportImport from "./components/ExportImport";
-import SummaryPanel from "./components/SummaryPanel";
-import DailyChange from "./components/DailyChange";
-import RebalancePanel from "./components/RebalancePanel";
-import LiveDashboard from "./components/LiveDashboard";
-import SmartAdvisor from "./components/SmartAdvisor";
-import AlertSystem from "./components/AlertSystem";
-import WeeklySummary from "./components/WeeklySummary";
-import FundStockSuggestion from "./components/FundStockSuggestion";
-import DashboardOverview from "./components/DashboardOverview";
-import GptChat from "./components/GptChat";
-import LocalLLMChat from "./components/LocalLLMChat";
-
-const sections = [
-  { label: "Portföyüm",           icon: <DashboardIcon/>,        comp: <Portfolio/> },
-  { label: "Varlık Ekle",         icon: <AddCircleIcon/>,        comp: <AddAsset/> },
-  { label: "Grafikler",           icon: <PieChartIcon/>,         comp: <Charts/> },
-  { label: "Ayarlar",             icon: <SettingsIcon/>,         comp: <Settings/> },
-  { label: "Fiyat Güncelle",      icon: <EditNoteIcon/>,         comp: <UpdatePrice/> },
-  { label: "GPT Tavsiye",         icon: <AutoAwesomeIcon/>,      comp: <GptAdvice/> },
-  { label: "Yedekle / Yükle",     icon: <FileUploadIcon/>,       comp: <ExportImport/> },
-  { label: "Portföy Özeti",       icon: <SummarizeIcon/>,        comp: <SummaryPanel/> },
-  { label: "Günlük Değişim",      icon: <TodayIcon/>,            comp: <DailyChange/> },
-  { label: "Rebalance",           icon: <SyncAltIcon/>,          comp: <RebalancePanel/> },
-  { label: "Canlı Dashboard",     icon: <MonitorIcon/>,          comp: <LiveDashboard/> },
-  { label: "Smart Advisor",       icon: <TipsAndUpdatesIcon/>,   comp: <SmartAdvisor/> },
-  { label: "🔔 Uyarılar",          icon: <NotificationsActiveIcon/>, comp: <AlertSystem/> },
-  { label: "Haftalık Özet",       icon: <DateRangeIcon/>,        comp: <WeeklySummary/> },
-  { label: "Fon & Hisse Öneri",   icon: <InsightsIcon/>,         comp: <FundStockSuggestion/> },
-  { label: "Dashboard",           icon: <DashboardIcon/>,        comp: <DashboardOverview/> },
-  { label: "GPT Sohbet",          icon: <ChatIcon/>,             comp: <GptChat/> },
-  { label: "Yerel Sohbet",        icon: <ComputerIcon/>,         comp: <LocalLLMChat/> }
+const sectionConfigs = [
+  { label: "Portföyüm",           icon: DashboardIcon,          loader: () => import("./components/Portfolio") },
+  { label: "Varlık Ekle",         icon: AddCircleIcon,          loader: () => import("./components/AddAsset") },
+  { label: "Grafikler",           icon: PieChartIcon,           loader: () => import("./components/Charts") },
+  { label: "Ayarlar",             icon: SettingsIcon,           loader: () => import("./components/Settings") },
+  { label: "Fiyat Güncelle",      icon: EditNoteIcon,           loader: () => import("./components/UpdatePrice") },
+  { label: "GPT Tavsiye",         icon: AutoAwesomeIcon,        loader: () => import("./components/GptAdvice") },
+  { label: "Yedekle / Yükle",     icon: FileUploadIcon,         loader: () => import("./components/ExportImport") },
+  { label: "Portföy Özeti",       icon: SummarizeIcon,          loader: () => import("./components/SummaryPanel") },
+  { label: "Günlük Değişim",      icon: TodayIcon,              loader: () => import("./components/DailyChange") },
+  { label: "Rebalance",           icon: SyncAltIcon,            loader: () => import("./components/RebalancePanel") },
+  { label: "Canlı Dashboard",     icon: MonitorIcon,            loader: () => import("./components/LiveDashboard") },
+  { label: "Smart Advisor",       icon: TipsAndUpdatesIcon,     loader: () => import("./components/SmartAdvisor") },
+  { label: "🔔 Uyarılar",          icon: NotificationsActiveIcon, loader: () => import("./components/AlertSystem") },
+  { label: "Haftalık Özet",       icon: DateRangeIcon,          loader: () => import("./components/WeeklySummary") },
+  { label: "Fon & Hisse Öneri",   icon: InsightsIcon,           loader: () => import("./components/FundStockSuggestion") },
+  { label: "Dashboard",           icon: DashboardIcon,          loader: () => import("./components/DashboardOverview") },
+  { label: "GPT Sohbet",          icon: ChatIcon,               loader: () => import("./components/GptChat") },
+  { label: "Yerel Sohbet",        icon: ComputerIcon,           loader: () => import("./components/LocalLLMChat") }
 ];
+
+const sections = sectionConfigs.map(({ loader, icon, ...rest }) => ({
+  ...rest,
+  Icon: icon,
+  Component: lazy(loader)
+}));
 
 export default function App() {
   const theme     = useTheme();
   const isMobile  = useMediaQuery("(max-width:768px)");
   const [tabIdx, setTabIdx] = useState(0);
   const [drawer,  setDrawer] = useState(false);
+  const ActiveComponent = useMemo(() => sections[tabIdx].Component, [tabIdx]);
 
   /* seansı hatırla */
   useEffect(()=>{
@@ -97,7 +84,10 @@ export default function App() {
       }}
     >
       {sections.map((s,i)=>(
-        <Tab key={s.label} icon={s.icon} iconPosition="start" label={s.label}
+        <Tab key={s.label}
+          icon={<s.Icon/>}
+          iconPosition="start"
+          label={s.label}
           sx={{
             alignItems:"flex-start", justifyContent:"flex-start", px:2,
             ...(tabIdx===i && { bgcolor: theme.palette.action.selected })
@@ -130,7 +120,15 @@ export default function App() {
 
         {/* İçerik */}
         <Box sx={{flex:1,p:2,overflowY:"auto",minWidth:0}}>
-          {sections[tabIdx].comp}
+          <Suspense
+            fallback={
+              <Box sx={{display:"flex",justifyContent:"center",alignItems:"center",height:"100%"}}>
+                <CircularProgress size={32}/>
+              </Box>
+            }
+          >
+            <ActiveComponent/>
+          </Suspense>
         </Box>
       </Box>
     </Box>
