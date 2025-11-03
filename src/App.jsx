@@ -69,13 +69,14 @@ const sections = [
 export default function App() {
   const theme     = useTheme();
   const isMobile  = useMediaQuery("(max-width:768px)");
-  const [tabIdx, setTabIdx] = useState(0);
+  const dashboardIndex = sections.findIndex(s => s.label === "Dashboard");
+  const [tabIdx, setTabIdx] = useState(dashboardIndex >= 0 ? dashboardIndex : 0);
   const [drawer,  setDrawer] = useState(false);
 
   /* seansı hatırla */
   useEffect(()=>{
-    const saved = Number(localStorage.getItem("activeTab"))||0;
-    if (saved < sections.length) setTabIdx(saved);
+    const saved = Number(localStorage.getItem("activeTab"));
+    if (saved >= 0 && saved < sections.length) setTabIdx(saved);
   },[]);
   useEffect(()=>localStorage.setItem("activeTab",tabIdx),[tabIdx]);
 
@@ -114,7 +115,7 @@ export default function App() {
         <AppBar position="static" color="default" elevation={1}>
           <Toolbar>
             <IconButton edge="start" onClick={()=>setDrawer(true)}><MenuIcon/></IconButton>
-            <Typography variant="h6">Portföy Yönetimi</Typography>
+            <Typography variant="h6">Portföy Yönetim Programı</Typography>
           </Toolbar>
         </AppBar>
       )}
